@@ -7,7 +7,7 @@ You can use hashids to hide primary keys in your database.
 
 More information about hashids and it's implementations can be found here: [hashids.org](http://hashids.org)
 
-**Suitable for hosted enviroments like AWS RDS**.
+**Suitable for hosted environments like AWS RDS**.
 
 *But if you are looking for an PG extention, then please check out [pg_hashids](https://github.com/iCyberon/pg_hashids) repository.*
 
