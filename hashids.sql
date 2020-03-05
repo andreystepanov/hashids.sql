@@ -119,6 +119,7 @@ begin
 end;
 $$ language plpgsql;
 
+
 create or replace function hashids._prepare(
   inout alphabet varchar,
   in salt varchar = '',
@@ -134,11 +135,12 @@ create or replace function hashids._prepare(
 ) as $$
 declare
   min_alphabet_length integer := 16;
-  sep_div integer := 3.5;
+  sep_div float := 3.5;
   guard_div integer := 12;
   guard_count integer;
   cur_sep varchar;
-  diff varchar;
+  diff integer;
+  temp_sep varchar;
 begin
   if alphabet is null then
     alphabet := 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
@@ -162,29 +164,24 @@ begin
     raise exception '[hash_id] error: Alphabet cannot contain spaces';
   end if;
 
-  for i in 1..length( separators ) loop
-    cur_sep := array_position( original_alphabet_arr, separators_arr [i] );
-
-    if cur_sep is null then
-      separators := substr( separators, 1, i ) || ' ' || substr( separators, i + 1 );
+  temp_sep := '';
+  foreach cur_sep in ARRAY separators_arr loop
+    if array_position( original_alphabet_arr, cur_sep ) is not null then
+        temp_sep := temp_sep || cur_sep;
     end if;
   end loop;
 
-  separators := regexp_replace( separators, '[ ]', '', 'g' );
-  separators := hashids.shuffle( separators, salt );
+  separators := hashids.shuffle( temp_sep, salt );
 
-  if ( length( separators ) < 1 or ( length( alphabet ) / length( separators ) ) > sep_div ) then
-    separators_length = ceil( length( alphabet ) / sep_div );
-
-    if ( separators_length > length( separators ) ) then
+   separators_length = ceil( length( alphabet )::float / sep_div );
+   if ( separators_length > length( separators ) ) then
       diff := separators_length - length( separators );
       separators := separators || substr( alphabet, 1, diff );
-      alphabet := substr( alphabet, diff );
-    end if;
+      alphabet := substr( alphabet, diff+1 );
   end if;
 
   alphabet := hashids.shuffle( alphabet, salt );
-  guard_count := ceil( length( alphabet ) / guard_div );
+  guard_count := ceil( length( alphabet )::float / guard_div );
 
   if length( alphabet ) < 3 then
     guards := substr( separators, 1, guard_count );
@@ -400,8 +397,6 @@ begin
   return hashids.encode( number := numbers, salt := salt, min_length := min_length, alphabet := alphabet );
 end;
 $$ language plpgsql;
-
-drop function hashids.decode_hex;
 
 create or replace function hashids.decode_hex(
   id varchar,
