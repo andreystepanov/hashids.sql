@@ -134,7 +134,7 @@ create or replace function hashids._prepare(
 ) as $$
 declare
   min_alphabet_length integer := 16;
-  sep_div integer := 3.5;
+  sep_div float := 3.5;
   guard_div integer := 12;
   guard_count integer;
   cur_sep varchar;
@@ -174,7 +174,7 @@ begin
   separators := hashids.shuffle( separators, salt );
 
   if ( length( separators ) < 1 or ( length( alphabet ) / length( separators ) ) > sep_div ) then
-    separators_length = ceil( length( alphabet ) / sep_div );
+    separators_length = ceil( length( alphabet )::float / sep_div );
 
     if ( separators_length > length( separators ) ) then
       diff := separators_length - length( separators );
@@ -184,7 +184,7 @@ begin
   end if;
 
   alphabet := hashids.shuffle( alphabet, salt );
-  guard_count := ceil( length( alphabet ) / guard_div );
+  guard_count := ceil( length( alphabet )::float / guard_div );
 
   if length( alphabet ) < 3 then
     guards := substr( separators, 1, guard_count );
@@ -400,8 +400,6 @@ begin
   return hashids.encode( number := numbers, salt := salt, min_length := min_length, alphabet := alphabet );
 end;
 $$ language plpgsql;
-
-drop function hashids.decode_hex;
 
 create or replace function hashids.decode_hex(
   id varchar,
