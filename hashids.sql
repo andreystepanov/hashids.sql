@@ -401,7 +401,7 @@ begin
 end;
 $$ language plpgsql;
 
-drop function hashids.decode_hex;
+drop function if exists hashids.decode_hex;
 
 create or replace function hashids.decode_hex(
   id varchar,
